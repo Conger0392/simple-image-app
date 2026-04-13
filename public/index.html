@@ -1,0 +1,234 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>简易生图工具</title>
+  <link rel="stylesheet" href="/index.css">
+</head>
+<body>
+  <div class="page">
+    <div class="page-header">
+      <div class="page-heading">
+        <h1>简易生图工具</h1>
+        <p class="subtitle">令牌存储在 <code>data/jwt_tokens.csv</code>，支持模型分组、操作模式、多图融合、风格转换和余额刷新。</p>
+      </div>
+      <div class="density-toggle" id="density-toggle" aria-label="页面密度切换">
+        <button class="ghost" type="button" data-density="comfortable">标准</button>
+        <button class="ghost" type="button" data-density="compact">紧凑</button>
+      </div>
+    </div>
+
+    <div class="app-tabs" id="app-tabs" role="tablist" aria-label="主导航">
+      <button class="ghost active" type="button" role="tab" aria-selected="true" data-app-tab="workbench">生成工作台</button>
+      <button class="ghost" type="button" role="tab" aria-selected="false" data-app-tab="history">历史记录</button>
+    </div>
+
+    <section class="tab-panel is-active" id="workbench-panel" data-tab-panel="workbench">
+      <div class="workbench-layout">
+        <section class="card token-section">
+          <h2>令牌管理</h2>
+          <div class="section-summary" id="token-total-count">总记录：0 条</div>
+          <details class="collapsible-panel" id="token-maintenance-panel">
+            <summary class="section-title collapsible-summary">单个维护</summary>
+            <form id="token-form">
+              <input id="token-edit-id" type="hidden">
+              <label>
+                邮箱
+                <input id="token-email" name="email" placeholder="example@domain.com" required>
+              </label>
+              <label>
+                密码
+                <input id="token-password" name="password" placeholder="可选">
+              </label>
+              <label>
+                JWT 令牌
+                <input id="token-value" name="token" placeholder="粘贴 JWT token" required>
+              </label>
+              <label>
+                余额
+                <input id="token-balance" name="balance" type="number" min="0" value="65" required>
+              </label>
+              <div class="token-actions">
+                <button id="token-submit-button" type="submit">保存令牌</button>
+                <button class="ghost" id="token-cancel-button" type="button" hidden>取消编辑</button>
+              </div>
+            </form>
+          </details>
+          <div class="section-title">CSV 导入</div>
+          <div class="form-stack">
+            <label>
+              CSV 文件
+              <input id="token-import-file" type="file" accept=".csv,text/csv">
+            </label>
+            <div class="hint">支持列：<code>email,password,jwtToken,balance,createdAt</code>，导入时会追加到 <code>data/jwt_tokens.csv</code>。</div>
+            <button class="secondary" id="token-import-button" type="button">导入 CSV</button>
+          </div>
+          <div class="status" id="token-status"></div>
+          <div class="filter-toolbar">
+            <div class="filter-group" id="token-filter-group">
+              <button class="filter-pill active" type="button" data-token-filter="all">全部</button>
+              <button class="filter-pill" type="button" data-token-filter="unused">未使用</button>
+              <button class="filter-pill" type="button" data-token-filter="used">已使用</button>
+              <button class="filter-pill" type="button" data-token-filter="low-balance">余额不足 15</button>
+            </div>
+            <div class="token-selection-note">生成下拉优先显示余额不少于 15 的 token；左侧选中的低余额 token 会保留为当前项。</div>
+          </div>
+          <div class="token-list" id="token-list"></div>
+          <div class="pagination pagination-toolbar">
+            <span class="pagination-summary">每页</span>
+            <select id="token-page-size" class="page-size-select" aria-label="Token 列表每页条数">
+              <option value="10">10 条</option>
+              <option value="20" selected>20 条</option>
+              <option value="50">50 条</option>
+            </select>
+          </div>
+          <div class="pagination" id="token-pagination"></div>
+        </section>
+
+        <div class="stack workbench-main">
+          <section class="card generate-section">
+            <h2>图片生成</h2>
+            <form id="generate-form" class="generate-grid">
+              <label>
+                当前令牌
+                <div id="selected-token-display" class="selected-token-display is-empty">请先在左侧选择令牌</div>
+                <div class="inline-actions">
+                  <button class="ghost" type="button" id="refresh-balance-button">刷新当前余额</button>
+                </div>
+                <select id="generate-token" name="tokenId" required hidden></select>
+              </label>
+              <label>
+                模型
+                <select id="generate-version" name="modelId" required></select>
+                <div class="hint" id="model-hint">按分组显示，模型名后附带单次消耗。</div>
+              </label>
+              <label>
+                操作类型
+                <div class="action-buttons" id="action-buttons" role="group" aria-label="操作类型选择">
+                  <button class="ghost" type="button" data-action-choice="tryon">试衣</button>
+                  <button class="ghost" type="button" data-action-choice="faceswap">换脸</button>
+                  <button class="ghost" type="button" data-action-choice="style">Style transfer</button>
+                </div>
+                <input id="generate-action" name="action" type="hidden" value="generate">
+                <div class="hint">默认标准生成；点击按钮切换到对应操作类型，再点一次可恢复标准生成。</div>
+              </label>
+              <label class="span-2">
+                提示词
+                <textarea id="prompt" name="prompt" placeholder="标准生成 / 风格转换时必填"></textarea>
+              </label>
+              <label class="span-2">
+                参考图（可多选）
+                <input id="reference-image" name="referenceImages" type="file" accept="image/*" multiple>
+                <div class="hint" id="reference-image-summary">当前未选择图片</div>
+              </label>
+              <button id="generate-button" class="span-2" type="submit">开始生成</button>
+            </form>
+            <div class="status" id="generate-status"></div>
+          </section>
+
+          <section class="card result-section">
+            <h2>当前结果</h2>
+            <div class="result-box" id="result-box">
+              <p class="empty">还没有生成图片。</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="history-panel" data-tab-panel="history" hidden>
+      <section class="card history-section history-page-card">
+        <div class="history-header-row">
+          <h2>生成历史</h2>
+          <div class="pagination pagination-toolbar inline-pagination-toolbar">
+            <span class="pagination-summary">每页</span>
+            <select id="history-page-size" class="page-size-select" aria-label="历史记录每页条数">
+              <option value="10">10 条</option>
+              <option value="20" selected>20 条</option>
+              <option value="50">50 条</option>
+            </select>
+          </div>
+        </div>
+        <div class="section-summary" id="history-total-count">总记录：0 条</div>
+        <div class="history-list" id="history-list"></div>
+        <div class="pagination" id="history-pagination"></div>
+      </section>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="style-config-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="style-config-title">
+      <div class="modal-header">
+        <h3 id="style-config-title">风格转换设置</h3>
+        <button class="ghost" type="button" id="style-config-close">关闭</button>
+      </div>
+      <div class="form-stack">
+        <label>
+          提示词
+          <textarea id="style-prompt" placeholder="请输入风格转换提示词"></textarea>
+        </label>
+        <div class="style-preview-shell">
+          <div class="section-title">风格示意图（请自行替换）</div>
+          <img id="style-preview-image" src="" alt="风格示意图">
+        </div>
+        <div class="style-quick-presets-shell">
+          <div class="section-title">快速选择</div>
+          <div class="style-quick-presets" id="style-quick-presets"></div>
+        </div>
+        <div class="result-actions">
+          <button class="secondary" type="button" id="style-config-apply">应用到风格转换</button>
+          <button class="ghost" type="button" id="style-config-cancel">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="ordered-upload-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ordered-upload-title">
+      <div class="modal-header">
+        <h3 id="ordered-upload-title">顺序上传设置</h3>
+        <button class="ghost" type="button" id="ordered-upload-close">关闭</button>
+      </div>
+      <p class="hint" id="ordered-upload-description">请严格按顺序设置两张图片。</p>
+      <div class="ordered-upload-grid">
+        <label class="ordered-upload-item">
+          <span class="section-title" id="ordered-upload-slot-1-label">第 1 张</span>
+          <input id="ordered-upload-slot-1" type="file" accept="image/*">
+          <span class="hint" id="ordered-upload-slot-1-summary">未选择</span>
+          <div class="ordered-upload-preview-shell">
+            <img class="ordered-upload-preview-image" id="ordered-upload-slot-1-preview" src="" alt="第 1 张预览" hidden>
+          </div>
+        </label>
+        <label class="ordered-upload-item">
+          <span class="section-title" id="ordered-upload-slot-2-label">第 2 张</span>
+          <input id="ordered-upload-slot-2" type="file" accept="image/*">
+          <span class="hint" id="ordered-upload-slot-2-summary">未选择</span>
+          <div class="ordered-upload-preview-shell">
+            <img class="ordered-upload-preview-image" id="ordered-upload-slot-2-preview" src="" alt="第 2 张预览" hidden>
+          </div>
+        </label>
+      </div>
+      <div class="result-actions">
+        <button class="ghost" type="button" id="ordered-upload-swap">交换顺序</button>
+        <button class="secondary" type="button" id="ordered-upload-apply">确认顺序并应用</button>
+        <button class="ghost" type="button" id="ordered-upload-cancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="history-detail-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="history-detail-title">
+      <div class="modal-header">
+        <h3 id="history-detail-title">历史详情</h3>
+        <button class="ghost" type="button" data-close-history-detail>关闭</button>
+      </div>
+      <div id="history-detail-body"></div>
+    </div>
+  </div>
+
+  <script src="/pagination-utils.js"></script>
+  <script src="/index.js"></script>
+</body>
+</html>
+
