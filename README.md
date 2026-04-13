@@ -194,3 +194,5 @@ npm test
 - 服务端路由拆分在 `server-routes/internal-api.js` 与 `server-routes/compat-api.js`
 - 历史记录存储在 `data/history.json`
 - token 数据存储在 `data/jwt_tokens.csv`
+# 社区链接
+[LinuxDO](https://linux.do/)
