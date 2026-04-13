@@ -1,6 +1,6 @@
 ﻿# simple-image-app
 
-一个面向 `chataibot.pro` 的本地图片工作台，提供令牌管理、图片生成、参考图编辑、多图融合、试衣、换脸、风格转换，以及 OpenAI / Anthropic 兼容接口。
+一个面向 `XXXXX` 的本地图片工作台，提供令牌管理、图片生成、参考图编辑、多图融合、试衣、换脸、风格转换，以及 OpenAI / Anthropic 兼容接口。
 
 ## 项目特性
 
